@@ -1,0 +1,48 @@
+{
+  "name": "edumind",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "tsx --test tests/*.test.ts",
+    "worker:video": "node --env-file=.env.local --import tsx worker/video-worker.ts",
+    "verify:video:live": "node --env-file=.env.local --import tsx scripts/verify-video-live.ts",
+    "verify:classroom:cloud": "node --env-file=.env.local --import tsx scripts/verify-classroom-cloud.ts",
+    "classroom:start": "node --env-file=.env.local --import tsx scripts/run-classroom.ts",
+    "verify:classroom:stack": "node --env-file=.env.local --import tsx scripts/verify-classroom-stack.ts"
+  },
+  "dependencies": {
+    "@google/genai": "2.28.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.3",
+    "fast-xml-parser": "5.11.2",
+    "jszip": "3.10.2",
+    "lucide-react": "1.55.0",
+    "next": "16.4.0",
+    "pdfjs-dist": "6.4.299",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-pgvector": "0.0.9",
+    "@playwright/test": "1.64.0",
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "tsx": "4.23.15",
+    "typescript": "^5"
+  },
+  "description": "Source-grounded learning with Gemini, Supabase, and timestamped video classrooms",
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "authenticated_upload": {
+    "status": "passed",
+    "bytes": 167447
+  },
+  "private_playback_url": {
+    "status": "passed",
+    "http": 206
+  },
+  "ownership_and_private_storage": {
+    "status": "passed"
+  },
+  "timestamped_transcript_upload": {
+    "status": "passed"
+  },
+  "background_processing": {
+    "status": "passed",
+    "segments": 5,
+    "indexed": true
+  },
+  "actual_audio_transcription": {
+    "status": "passed",
+    "concepts": [
+      "photosynthesis",
+      "chlorophyll",
+      "calvin",
+      "carbon dioxide"
+    ],
+    "calvin_start": 13.2
+  },
+  "grounded_tutor": {
+    "status": "passed",
+    "mode": "ai",
+    "citations": 4
+  },
+  "quiz_and_revision": {
+    "status": "passed",
+    "mode": "ai",
+    "questions": 3,
+    "revision_start": 0
+  },
+  "mastery_and_saved_notes": {
+    "status": "passed"
+  }
+}

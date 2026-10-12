@@ -1,0 +1,3 @@
+project_id = "edumind"
+[db.migrations]
+schema_paths = ["./schemas/edumind.sql", "./schemas/smart_classroom.sql", "./schemas/video_jobs.sql"]

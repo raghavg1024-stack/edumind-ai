@@ -1,0 +1,10 @@
+.env*
+!.env.example
+node_modules
+.git
+.next
+docs
+tests
+worker
+scripts
+*.tsbuildinfo

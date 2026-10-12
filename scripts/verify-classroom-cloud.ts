@@ -1,0 +1,44 @@
+import {createClient,type SupabaseClient} from '@supabase/supabase-js';
+import {readFile,writeFile} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import assert from 'node:assert/strict';
+const base=process.env.TEST_APP_URL||'http://127.0.0.1:3000';
+async function main(){
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL!,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+ const admin=createClient(url,process.env.SUPABASE_SECRET_KEY!,{auth:{persistSession:false}});
+ const students:{id:string;token:string;db:SupabaseClient}[]=[];
+ const report:Record<string,unknown>={};let videoPath:string|undefined;
+ const check=(e:{message:string}|null)=>{if(e)throw new Error(e.message);};
+ const checkpoint=async()=>{await writeFile('docs/cloud-verification.json',JSON.stringify(report,null,2));};
+ try{
+  const prior=await admin.auth.admin.listUsers({page:1,perPage:1000});check(prior.error);
+  for(const stale of prior.data.users.filter(u=>u.email?.startsWith('edumind-verification-')&&u.email.endsWith('@example.invalid'))){const owned=await admin.from('lectures').select('storage_path').eq('user_id',stale.id);for(const l of owned.data||[])if(l.storage_path)await admin.storage.from('lecture-videos').remove([l.storage_path]);await admin.auth.admin.deleteUser(stale.id);}
+  for(let i=0;i<2;i++){const email=`edumind-verification-${randomUUID()}@example.invalid`,password=randomUUID()+randomUUID();const created=await admin.auth.admin.createUser({email,password,email_confirm:true});check(created.error);if(!created.data.user)throw new Error('Test student creation failed.');const db=createClient(url,key,{auth:{persistSession:false}});const signed=await db.auth.signInWithPassword({email,password});check(signed.error);students.push({id:created.data.user.id,token:signed.data.session!.access_token,db});}
+  async function call(route:string,body:Record<string,unknown>|FormData,student=0){const r=await fetch(base+route,{method:'POST',headers:{Authorization:`Bearer ${students[student].token}`,...(!(body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body instanceof FormData?body:JSON.stringify(body),signal:AbortSignal.timeout(150000)});const text=await r.text();if(!r.headers.get('content-type')?.includes('application/json'))throw new Error(`${route} ${body instanceof FormData?'upload':body.action} returned non-JSON HTTP ${r.status}; page title: ${text.match(/<title>(.*?)<\/title>/)?.[1]||'unavailable'}`);const j=JSON.parse(text);if(!r.ok)throw new Error(`${route} (${r.status}): ${j.error}`);return j;}
+  const bytes=await readFile('public/samples/photosynthesis.mp4');
+  const created=await call('/api/classroom',{action:'create',title:'Known-speech lecture verification',topic:'Photosynthesis',course:'Biology verification',filename:'lecture.mp4',size:bytes.length,duration:21.166667});
+  videoPath=created.upload.path;const upload=await students[0].db.storage.from('lecture-videos').uploadToSignedUrl(videoPath!,created.upload.token,bytes,{contentType:'video/mp4'});check(upload.error);
+  await call('/api/classroom',{action:'complete',lecture_id:created.lecture.id});report.authenticated_upload={status:'passed',bytes:bytes.length};await checkpoint();console.log('Verified private student upload.');
+  const detail=await call('/api/classroom',{action:'detail',lecture_id:created.lecture.id});const playback=await fetch(detail.video_url,{headers:{Range:'bytes=0-31'}});assert.ok(playback.ok);const header=new Uint8Array(await playback.arrayBuffer());assert.equal(Buffer.from(header.subarray(4,8)).toString(),'ftyp');report.private_playback_url={status:'passed',http:playback.status};
+  const other=await fetch(base+'/api/classroom',{method:'POST',headers:{Authorization:`Bearer ${students[1].token}`,'Content-Type':'application/json'},body:JSON.stringify({action:'detail',lecture_id:created.lecture.id})});assert.ok(other.status>=400);const privateVideo=await fetch(url+'/storage/v1/object/public/lecture-videos/'+videoPath);assert.ok(!privateVideo.ok);report.ownership_and_private_storage={status:'passed'};
+  const captions=await readFile('public/samples/photosynthesis.vtt','utf8');await call('/api/classroom',{action:'transcript',lecture_id:created.lecture.id,transcript_name:'authored.vtt',transcript_text:captions});
+  const manual=await call('/api/classroom',{action:'detail',lecture_id:created.lecture.id});assert.equal(manual.segments.length,3);assert.equal(manual.segments[2].start_seconds,12.987);report.timestamped_transcript_upload={status:'passed'};
+  await call('/api/classroom',{action:'bookmark',lecture_id:created.lecture.id,at_seconds:12.987,note:'Revisit the Calvin cycle.'});await call('/api/classroom',{action:'progress',lecture_id:created.lecture.id,at_seconds:12.987});
+  const queued=await call('/api/classroom',{action:'process',lecture_id:created.lecture.id,job_kind:process.env.VIDEO_TRANSCRIPTION_ENABLED==='true'?'transcribe':'index'});assert.ok(queued.job_id);
+  let final;const deadline=Date.now()+480000;while(Date.now()<deadline){final=await call('/api/classroom',{action:'detail',lecture_id:created.lecture.id});if(final.lecture.status==='failed')throw new Error('Worker failed: '+final.lecture.error_message);if(final.lecture.status==='ready'&&final.lecture.indexed)break;await new Promise(resolve=>setTimeout(resolve,3000));}
+  assert.ok(final?.lecture.indexed,'background job finished');assert.equal(final.bookmarks.length,1);assert.equal(final.progress,12.987);report.background_processing={status:'passed',segments:final.segments.length,indexed:final.lecture.indexed};await checkpoint();console.log('Verified background transcription and indexing.');
+  if(process.env.VIDEO_TRANSCRIPTION_ENABLED==='true'){const recognized=final.segments.map((s:{content:string})=>s.content).join(' ').toLowerCase();const matched=['photosynthesis','chlorophyll','calvin','carbon dioxide'].filter(w=>recognized.includes(w));assert.ok(matched.length>=3,'actual speech concepts recognized');for(const s of final.segments)assert.ok(s.start_seconds>=0&&s.end_seconds>s.start_seconds&&s.end_seconds<23);const calvin=final.segments.find((s:{content:string})=>/calvin/i.test(s.content));assert.ok(calvin&&Math.abs(calvin.start_seconds-12.987)<2,'Calvin-cycle speech alignment within two seconds');report.actual_audio_transcription={status:'passed',concepts:matched,calvin_start:calvin.start_seconds};}
+  else report.actual_audio_transcription={status:'blocked',reason:'Only transcript indexing was configured.'};
+  console.log('Checking live grounded tutor.');const tutor=await call('/api/study',{action:'tutor',question:'What does the Calvin cycle fix?'});assert.match(tutor.answer,/carbon dioxide/i);assert.ok(tutor.citations.some((c:{lecture_id:string;start_seconds:number})=>c.lecture_id===created.lecture.id&&Math.abs(c.start_seconds-12.987)<2));report.grounded_tutor={status:tutor.generation_mode==='source-only'?'degraded':'passed',mode:tutor.generation_mode||'ai',citations:tutor.citations.length};
+  console.log('Checking lecture quiz and revision links.');const quiz=await call('/api/study',{action:'quiz',topic:'Photosynthesis'});assert.ok(quiz.questions.length);assert.ok(quiz.questions.some((q:{citation:{lecture_id:string}})=>q.citation.lecture_id===created.lecture.id));
+  const saved=await admin.from('quizzes').select('questions').eq('id',quiz.id).single();check(saved.error);const wrong=saved.data!.questions.map((q:{answer:number})=>(q.answer+1)%4);
+  const graded=await call('/api/study',{action:'grade',quiz_id:quiz.id,answers:wrong});assert.equal(graded.correct,0);const revision=await call('/api/study',{action:'citation',chunk_id:graded.feedback[0].chunk_id});assert.equal(revision.lecture_id,created.lecture.id);report.quiz_and_revision={status:quiz.generation_mode==='source-check'?'degraded':'passed',mode:quiz.generation_mode||'ai',questions:quiz.questions.length,revision_start:revision.start_seconds};
+  await call('/api/study',{action:'grade',quiz_id:quiz.id,answers:wrong});const snapshot=await call('/api/study',{action:'snapshot'});assert.equal(snapshot.mastery[0].total,quiz.questions.length);report.mastery_and_saved_notes={status:'passed'};if(Object.values(report).some(r=>(r as {status?:string}).status==='degraded'))process.exitCode=2;
+ }catch(e){report.failure={status:'failed',reason:e instanceof Error?e.message.replace(/(?:sb_secret_|AIza|Bearer |Token )[^\s]+/g,'[redacted]').slice(0,500):'Verification failed'};process.exitCode=1;
+ }finally{
+  if(videoPath)await admin.storage.from('lecture-videos').remove([videoPath]);
+  for(const s of students){await admin.auth.admin.signOut(s.token,'global');await admin.auth.admin.deleteUser(s.id);}
+  await writeFile('docs/cloud-verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+ }
+}
+void main().catch(()=>{console.error('Cloud verification could not start.');process.exitCode=1;});

@@ -1,0 +1,14 @@
+{
+  "tested_at": "2026-10-12T15:46:05.523Z",
+  "status": "passed",
+  "checks": [
+    "mobile dashboard",
+    "galaxy navigation and zoom",
+    "source-grounded tutor",
+    "quiz grading and revision citation",
+    "classroom navigation",
+    "mobile overflow",
+    "desktop dashboard"
+  ],
+  "page_errors": []
+}

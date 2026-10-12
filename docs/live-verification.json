@@ -1,0 +1,35 @@
+{
+  "audio_extraction": {
+    "status": "passed",
+    "duration": 21.166667
+  },
+  "actual_speech_transcription": {
+    "status": "blocked",
+    "reason": "No prerecorded speech API configured. Web Speech is not a background timestamped audio service."
+  },
+  "supabase_connection": {
+    "status": "blocked",
+    "reason": "Missing or invalid publishable key."
+  },
+  "cloud_student_upload": {
+    "status": "blocked",
+    "reason": "Requires applied classroom schema and an authenticated test student. Local storage-policy tests are separate."
+  },
+  "semantic_video_retrieval": {
+    "status": "passed",
+    "start_seconds": 12.987,
+    "end_seconds": 20.47
+  },
+  "gemini_grounding": {
+    "status": "passed",
+    "embedding_dimensions": 768
+  },
+  "lecture_quiz_generation": {
+    "status": "passed",
+    "questions": 2,
+    "revision_timestamps": [
+      5.753,
+      12.987
+    ]
+  }
+}
