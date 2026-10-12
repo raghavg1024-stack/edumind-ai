@@ -1,6 +1,7 @@
 <p align="center"><img src="docs/assets/banner.svg" alt="EduMind AI — source-grounded learning" width="100%" /></p>
 
 <p align="center">
+<a href="https://github.com/raghavg1024-stack/edumind-ai/actions/workflows/ci.yml"><img src="https://github.com/raghavg1024-stack/edumind-ai/actions/workflows/ci.yml/badge.svg" alt="Quality checks" /></a>
 <img src="https://img.shields.io/badge/Next.js-16-111827?logo=nextdotjs" alt="Next.js 16" />
 <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
 <img src="https://img.shields.io/badge/Supabase-Auth%20%2B%20Vectors-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
@@ -20,7 +21,7 @@ The interface adapts the supplied Google Stitch designs: a violet dashboard, sou
 
 ## Explore
 
-- **Live app:** see the verified address and service availability in [Deployment status](docs/DEPLOYMENT.md).
+- **[Open EduMind AI](https://edumind-ai-xi.vercel.app)** · [Deployment status and service availability](docs/DEPLOYMENT.md)
 - [Smart Classroom operator guide](docs/SMART_CLASSROOM.md)
 - [Cloud integration evidence](docs/cloud-verification.json)
 - [Interface verification](docs/stitch-verification.json)

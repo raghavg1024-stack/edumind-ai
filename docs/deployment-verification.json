@@ -1,0 +1,13 @@
+{
+  "origin": "https://edumind-ai-xi.vercel.app",
+  "tested_at": "2026-10-12T16:25:09.314Z",
+  "checks": {
+    "homepage": "passed",
+    "study_requires_auth": "passed",
+    "classroom_requires_auth": "passed",
+    "sample_video_range": "passed",
+    "text_ingestion": "passed",
+    "responsive_browser_navigation": "passed",
+    "console_page_errors": "none"
+  }
+}
